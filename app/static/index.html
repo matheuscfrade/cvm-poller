@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mesa IPE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #17231f;
+      --muted: #607069;
+      --paper: #e4ebe7;
+      --panel: #fbfcfa;
+      --line: #c6d2cc;
+      --cvm: #087968;
+      --fato: #9a3442;
+      --gold: #d5a84c;
+      --shadow: 0 14px 34px #18352b14;
+      --body-bg: linear-gradient(135deg, #e8efeb 0%, var(--paper) 48%, #dce7e1 100%);
+      --glass: #fbfcfaef;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Source Sans 3", sans-serif; background: var(--body-bg); color: var(--ink); letter-spacing: 0; }
+    body.dark { --ink: #e7efeb; --muted: #9aaba4; --paper: #17241f; --panel: #202f29; --line: #40554c; --cvm: #55c4a5; --fato: #e7838d; --gold: #e8bd63; --shadow: 0 14px 34px #00000055; --body-bg: linear-gradient(135deg, #101916 0%, #17241f 52%, #0d1412 100%); --glass: #202f29ee; }
+    a { color: var(--cvm); }
+    header {
+      display: flex; justify-content: space-between; gap: 1rem; align-items: center;
+      padding: 1.35rem 1.8rem 1rem; border-bottom: 1px solid var(--ink); background: var(--glass); box-shadow: 0 2px 0 #ffffff18;
+    }
+    h1 { font-family: "Source Serif 4", serif; font-size: clamp(1.65rem, 3vw, 2.35rem); letter-spacing: 0.01em; margin: 0; }
+    .subtitle { color: var(--muted); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0.2rem 0 0; }
+    nav { display: flex; gap: 0.8rem; align-items: center; font-size: 0.92rem; }
+    .live { color: var(--cvm); font-weight: 600; }
+    .theme-toggle { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 0.3rem 0.65rem; font-size: 0.76rem; }
+    .theme-toggle:hover { border-color: var(--cvm); color: var(--cvm); }
+    .tape {
+      overflow: hidden; border-bottom: 1px solid #32443d; background: var(--ink); color: var(--panel);
+      font-size: 0.82rem; letter-spacing: 0.025em; white-space: nowrap;
+    }
+    .tape-track { display: inline-block; padding: 0.45rem 0; animation: marquee 40s linear infinite; }
+    .tape b { color: var(--gold); font-weight: 700; }
+    body.dark .tape { background: #0b1411 !important; color: #f6fffb !important; border-bottom-color: #40554c; }
+    body.dark .tape-track { background: transparent !important; }
+    body.dark .tape b { color: #55c4a5 !important; font-weight: 700; text-shadow: none; }
+    @keyframes marquee { from { transform: translateX(50vw); } to { transform: translateX(-100%); } }
+    @media (prefers-reduced-motion: reduce) { .tape-track { animation: none; } }
+    .watch {
+      background: var(--glass); border-bottom: 1px solid var(--line);
+      padding: 0.8rem 1.8rem 0.9rem; box-shadow: var(--shadow);
+    }
+    .watch-head { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; }
+    .watch-head h2 { margin: 0; font-size: 0.7rem; color: var(--muted); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .lido-filter { display: inline-flex; gap: 0.25rem; margin-left: auto; }
+    .lido-filter button {
+      background: #ffffff80; color: var(--muted); border: 1px solid var(--line);
+      padding: 0.28rem 0.65rem; font-weight: 600; font-size: 0.75rem; border-radius: 999px;
+    }
+    .lido-filter button[aria-pressed="true"] { background: var(--cvm); color: var(--panel); border-color: var(--cvm); box-shadow: 0 3px 8px #08796833; }
+    body.dark .lido-filter button[aria-pressed="false"] { background: #31453d; color: #d8e5df; border-color: #52685e; }
+    body.dark .lido-filter button[aria-pressed="false"] .badge { background: #e7838d; color: #17241f; }
+    .lido-filter .badge { margin-left: 0.25rem; }
+    .fav-picker { position: relative; min-width: 14rem; }
+    .fav-picker form { display: flex; gap: 0.3rem; }
+    .fav-picker input { width: 11rem; }
+    .fav-picker button[type="submit"] { padding: 0.25rem 0.55rem; }
+    .fav-menu {
+      position: absolute; z-index: 30; left: 0; top: calc(100% + 0.2rem);
+      min-width: 14rem; max-height: 14rem; overflow-y: auto;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow);
+    }
+    .fav-opt {
+      display: block; width: 100%; text-align: left; background: transparent; color: var(--ink);
+      border: 0; border-bottom: 1px solid var(--line); padding: 0.4rem 0.7rem;
+      font-weight: 700; letter-spacing: 0.04em; cursor: pointer;
+    }
+    .fav-opt:hover, .fav-opt.is-active { background: var(--paper); }
+    .fav-opt span { font-weight: 400; color: var(--muted); letter-spacing: 0; font-size: 0.78rem; margin-left: 0.4rem; }
+    .fav-empty { margin: 0; padding: 0.55rem 0.7rem; color: var(--muted); font-size: 0.82rem; }
+    .chips {
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      max-height: 6.4rem; overflow-y: auto; margin-top: 0.5rem;
+    }
+    .chips:empty { display: none; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 0.15rem;
+      border: 1px solid var(--line); background: #ffffff99; border-radius: 999px;
+      padding: 0.18rem 0.2rem 0.18rem 0.65rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .chip a { color: inherit; text-decoration: none; }
+    .chip button { background: transparent; color: var(--muted); border: 0; padding: 0.05rem 0.4rem; font-weight: 600; }
+    .chip button:hover { color: var(--fato); }
+    .badge { background: var(--fato); color: var(--panel); font-size: 0.7rem; padding: 0.05rem 0.35rem; }
+    main { max-width: 96rem; width: 100%; margin: 0 auto; padding: 1.35rem 1.8rem 4.5rem; }
+    form.filters { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: end; margin-bottom: 0.8rem; }
+    label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--muted); }
+    button.check-filter {
+      display: inline-flex; flex-direction: row; align-items: center;
+      background: transparent; color: var(--muted); border: 0; padding: 0 0 0.35rem;
+      font-weight: 400; font-size: 0.8rem; cursor: pointer; white-space: nowrap;
+    }
+    .check-box { display: inline-grid; place-content: center; width: 1rem; height: 1rem; margin-right: 0.35rem; border: 1px solid var(--muted); border-radius: 3px; background: var(--panel); }
+    .check-box::after { content: ""; width: 0.55rem; height: 0.55rem; transform: scale(0); transition: transform 0.1s ease; background: #fff; clip-path: polygon(14% 44%, 0 59%, 38% 100%, 100% 18%, 84% 5%, 38% 70%); }
+    button.check-filter[aria-pressed="true"] .check-box { background: var(--cvm); border-color: var(--cvm); }
+    button.check-filter[aria-pressed="true"] .check-box::after { transform: scale(1); }
+    button.check-filter:focus-visible { outline: 2px solid var(--cvm); outline-offset: 2px; }
+    .date-wrap { display: flex; align-items: center; gap: 0.1rem; }
+    .date-wrap input { min-width: 8.2rem; }
+    .cal-open { background: transparent; color: var(--ink); border: 0; padding: 0.2rem; line-height: 0; }
+    .cal-open svg { display: block; }
+    .cal-pop {
+      position: fixed; z-index: 40; min-width: 16.5rem;
+      background: var(--panel); color: var(--ink); border: 1px solid var(--ink);
+      padding: 0.65rem 0.7rem 0.75rem; box-shadow: 0 10px 28px #0003;
+    }
+    .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.45rem; }
+    .cal-head strong { font-size: 0.88rem; text-transform: capitalize; }
+    .cal-head button { background: transparent; color: var(--ink); border: 0; padding: 0.15rem 0.4rem; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 2rem); gap: 0.12rem; justify-content: center; }
+    .cal-grid span, .cal-grid button { width: 2rem; height: 2rem; display: grid; place-content: center; font-size: 0.78rem; }
+    .cal-grid span { color: var(--muted); font-size: 0.68rem; height: 1.3rem; }
+    .cal-grid button { background: transparent; color: var(--ink); border: 0; padding: 0; border-radius: 3px; }
+    .cal-grid button:hover { background: var(--paper); }
+    .cal-grid button.is-today { box-shadow: inset 0 0 0 1px var(--cvm); }
+    .cal-grid button.is-selected { background: var(--cvm); color: var(--panel); }
+    .cal-grid button.muted { color: #9aa8a2; }
+    input, select, button { font: inherit; }
+    input, select { border: 0; border-bottom: 1px solid var(--muted); background: #ffffff70; padding: 0.45rem 0.55rem; color: var(--ink); border-radius: 4px 4px 0 0; }
+    input:focus, select:focus { outline: 2px solid #08796855; outline-offset: 1px; border-bottom-color: var(--cvm); }
+    input::placeholder { color: #71827b; opacity: 1; }
+    body.dark input, body.dark select { background: #14221d; color: var(--ink); }
+    body.dark input::placeholder { color: #b7c8c0; opacity: 1; }
+    button { background: var(--ink); color: var(--panel); border: 1px solid var(--ink); padding: 0.4rem 0.8rem; font-weight: 600; cursor: pointer; }
+    button.theme-toggle { background: transparent; color: var(--ink); border-color: var(--line); padding: 0.3rem 0.65rem; }
+    button.ghost { background: transparent; color: var(--ink); }
+    select { max-width: 28rem; }
+    .status { color: var(--muted); font-size: 0.9rem; margin: 0.4rem 0 0.8rem; }
+    #fav-status { font-size: 0.78rem; margin: 0; }
+    #fav-status:empty { display: none; margin: 0; }
+    .error { color: var(--fato); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid var(--ink); padding: 0.55rem 0.6rem 0.55rem 0; }
+    td { border-bottom: 1px solid var(--line); padding: 0.78rem 0.6rem 0.78rem 0; vertical-align: top; }
+    tbody tr:hover { background: #ffffff66; }
+    tr.fato td:first-child { box-shadow: inset 3px 0 0 var(--fato); padding-left: 0.6rem; }
+    .empresa { font-weight: 600; }
+    .ticker { font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+    .ccvm { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+    .read-toggle { display: inline-flex; align-items: center; gap: 0.3rem; border: 0; padding: 0.15rem 0; background: transparent; color: var(--muted); font-size: 0.68rem; }
+    .read-toggle:hover { background: transparent; }
+    .switch-track { position: relative; display: inline-block; width: 2.1rem; height: 1.1rem; border-radius: 999px; transition: background 0.15s ease; }
+    .switch-thumb { position: absolute; top: 0.15rem; width: 0.8rem; height: 0.8rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px #0005; transition: left 0.15s ease; }
+    .read-toggle.is-read .switch-track { background: #2f7d4a; }
+    .read-toggle.is-read .switch-thumb { left: 1.15rem; }
+    .read-toggle.is-unread .switch-track { background: #b23a48; }
+    .read-toggle.is-unread .switch-thumb { left: 0.15rem; }
+    .read-toggle.is-read .switch-label { color: #2f7d4a; }
+    .read-toggle.is-unread .switch-label { color: #b23a48; }
+    .pager { display: flex; gap: 0.6rem; align-items: center; margin: 1rem 0 0; flex-wrap: wrap; }
+    .pager button:disabled { opacity: 0.4; cursor: default; }
+    .panel { max-width: 28rem; }
+    .panel input { width: 100%; margin: 0.4rem 0 0.8rem; }
+    footer { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; border-top: 1px solid var(--line); padding: 0.75rem 1.3rem; color: var(--muted); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; background: var(--glass); }
+    @media (max-width: 800px) {
+      header, .watch, main { padding-left: 1rem; padding-right: 1rem; }
+      .fav-picker input { width: 9rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1><a href="/" style="color:inherit;text-decoration:none">Mesa IPE</a></h1>
+      <p class="subtitle">Informações Periódicas e Eventuais - CVM</p>
+    </div>
+    <nav>
+      <span class="live" id="live">coletando…</span>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false" title="Alternar tema">☾ Escuro</button>
+    </nav>
+  </header>
+  <div class="tape" aria-label="Fita ao vivo"><div class="tape-track" id="tape">Carregando documentos…</div></div>
+  <section class="watch" aria-label="Favoritos">
+    <div class="watch-head">
+      <h2>Favoritos</h2>
+      <div class="fav-picker" id="fav-picker">
+        <form id="add-fav">
+          <input id="busca-fav" role="combobox" aria-expanded="false" aria-controls="fav-menu" aria-autocomplete="list" placeholder="Selecionar ticker" autocomplete="off" spellcheck="false">
+          <button type="submit" title="Incluir ticker">+</button>
+        </form>
+        <div id="fav-menu" class="fav-menu" role="listbox" hidden></div>
+      </div>
+      <div class="lido-filter" role="group" aria-label="Filtro de leitura">
+        <button type="button" data-lido="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-lido="nao" aria-pressed="false">Não lidos <span class="badge" id="lido-n" hidden></span></button>
+        <button type="button" data-lido="sim" aria-pressed="false">Lidos</button>
+      </div>
+    </div>
+    <div class="chips" id="favoritos"></div>
+  </section>
+  <main id="main"></main>
+  <footer>developed by Matheus Costa Frade</footer>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const path = location.pathname;
+    const THEME_KEY = "mesa_ipe_tema";
+
+    function setTheme(theme) {
+      const dark = theme === "dark";
+      document.body.classList.toggle("dark", dark);
+      const button = $("theme-toggle");
+      if (button) {
+        button.setAttribute("aria-pressed", dark ? "true" : "false");
+        button.textContent = dark ? "☀ Claro" : "☾ Escuro";
+      }
+    }
+
+    setTheme(localStorage.getItem(THEME_KEY) || "light");
+    $("theme-toggle").addEventListener("click", () => {
+      const dark = document.body.classList.toggle("dark");
+      localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+      setTheme(dark ? "dark" : "light");
+    });
+
+    const FAV_KEY = "mesa_ipe_favoritos";
+    const SEEN_KEY = "mesa_ipe_alertas_vistos";
+
+    async function api(url, opts={}) {
+      const headers = { ...(opts.headers || {}) };
+      if (opts.body) headers["Content-Type"] = "application/json";
+      const res = await fetch(url, { ...opts, headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data.detail;
+        const msg = typeof detail === "string" ? detail : (data.error || res.statusText);
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    function escapeHtml(v) {
+      return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+    function officialWhen(value) {
+      const m = /(\d{2}\/\d{2}\/\d{4})(?:\s+(\d{2}:\d{2})(?::\d{2})?)?/.exec(value || "");
+      if (!m) return "—";
+      return m[2] ? `${m[1]} ${m[2]}` : m[1];
+    }
+    function formatSeen(iso) {
+      if (!iso) return "—";
+      const raw = /Z$|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z";
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return iso;
+      return new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(d).replace(",", "");
+    }
+
+    function rowsHtml(links) {
+      if (!links.length) return '<p class="status">Nada neste recorte. Siga uma empresa.</p>';
+      return `<table><thead><tr><th>Entrega</th><th>Ticker</th><th>Empresa</th><th>CVM</th><th>Categoria</th><th></th></tr></thead><tbody>` +
+        links.map(row => {
+          const fato = /fato relevante/i.test(row.categoria || "");
+          const id = String(row.protocolo || row.url || "");
+          const seen = id && seenIds().has(id);
+          const tickerCell = row.ticker
+            ? `<a class="ticker" href="/?ticker=${encodeURIComponent(row.ticker)}" data-filter-ticker="${escapeHtml(row.ticker)}">${escapeHtml(row.ticker)}</a>`
+            : "—";
+          return `<tr class="${fato ? "fato" : ""}">
+            <td>${escapeHtml(officialWhen(row.data_entrega))}</td>
+            <td>${tickerCell}</td>
+            <td class="empresa">${escapeHtml(row.empresa || "—")}</td>
+            <td class="ccvm">${escapeHtml(row.ccvm || "—")}</td>
+            <td>${escapeHtml(row.categoria)}</td>
+              <td><div class="row-actions">
+                ${row.url ? `<a href="${escapeHtml(row.url)}" target="_blank" rel="noopener">PDF</a>` : ""}
+                ${id ? `<button type="button" role="switch" aria-checked="${seen ? "true" : "false"}" class="read-toggle ${seen ? "is-read" : "is-unread"}" data-read-toggle="${escapeHtml(id)}" title="${seen ? "Clique para marcar como não lido" : "Clique para marcar como lido"}"><span class="switch-track"><span class="switch-thumb"></span></span><span class="switch-label">${seen ? "LIDO" : "NÃO LIDO"}</span></button>` : ""}
+              </div></td>
+          </tr>`;
+        }).join("") + "</tbody></table>";
+    }
+
+    async function loadStatus() {
+      try {
+        const s = await api("/api/status");
+        const t = s.last_poll_at_br || formatSeen(s.last_poll_at);
+        $("live").textContent = s.last_poll_error ? "coleta com falha" : (t ? `atualizado em ${t}` : "ainda não");
+      } catch { $("live").textContent = "offline"; }
+    }
+
+    function loadFavs() {
+      try { return JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveFavs(list) {
+      localStorage.setItem(FAV_KEY, JSON.stringify([...new Set(list.map(t => String(t).toUpperCase()))]));
+    }
+    function isFav(ticker) {
+      return loadFavs().includes(String(ticker || "").toUpperCase());
+    }
+    function addFav(ticker) {
+      const t = String(ticker || "").trim().toUpperCase();
+      if (!t) return;
+      saveFavs([...loadFavs(), t]);
+    }
+    function setFavStatus(text, isError) {
+      const el = $("fav-status");
+      if (!el) return;
+      el.className = isError ? "status error" : "status";
+      el.textContent = text || "";
+    }
+    async function addFavChecked(raw) {
+      const t = String(raw || "").trim().toUpperCase();
+      const btn = $("add-fav")?.querySelector("button");
+      if (!t) {
+        setFavStatus("Informe um ticker, ex.: PETR4 ou C1MG34", true);
+        return;
+      }
+      if (isFav(t)) {
+        setFavStatus(t + " já está nos favoritos.");
+        $("busca-fav").value = "";
+        closeFavMenu();
+        renderFavs();
+        return;
+      }
+      setFavStatus("Verificando " + t + "…");
+      if (btn) btn.disabled = true;
+      try {
+        const data = await api("/api/ticker?ticker=" + encodeURIComponent(t));
+        addFav(data.ticker);
+        $("busca-fav").value = "";
+        closeFavMenu();
+        setFavStatus(data.empresa ? data.ticker + " · " + data.empresa : "");
+        syncFavs();
+      } catch (err) {
+        setFavStatus(err.message || "Ticker não encontrado.", true);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+    function removeFav(ticker) {
+      saveFavs(loadFavs().filter(x => x !== String(ticker).toUpperCase()));
+    }
+    function seenIds() {
+      try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]")); }
+      catch { return new Set(); }
+    }
+    function markSeen(ids) {
+      const s = seenIds();
+      ids.forEach(id => s.add(id));
+      localStorage.setItem(SEEN_KEY, JSON.stringify([...s].slice(-800)));
+    }
+    function markUnread(ids) {
+      const remove = new Set(ids);
+      localStorage.setItem(SEEN_KEY, JSON.stringify([...seenIds()].filter(id => !remove.has(id))));
+    }
+
+    function favQuery() {
+      return ($("busca-fav")?.value || "").trim().toUpperCase();
+    }
+
+    function renderFavs() {
+      const box = $("favoritos");
+      if (!box) return;
+      const favs = loadFavs();
+      if (!favs.length) {
+        box.innerHTML = "";
+        setFavStatus("");
+        return;
+      }
+      box.innerHTML = favs.map((t) =>
+        `<span class="chip"><a href="/?ticker=${encodeURIComponent(t)}" data-filter-ticker="${escapeHtml(t)}">${escapeHtml(t)}</a><button type="button" data-unstar="${escapeHtml(t)}" title="Remover ${escapeHtml(t)}" aria-label="Remover ${escapeHtml(t)}">×</button></span>`
+      ).join("");
+    }
+
+    let tickerCatalog = null;
+    let tickerCatalogP = null;
+
+    async function loadTickersFromFeed() {
+      const found = {};
+      let page = 1;
+      let pages = 1;
+      do {
+        const data = await api("/api/ipe?listagem=todas&page_size=100&page=" + page);
+        for (const row of data.links || []) {
+          const code = String(row.ticker || "").trim().toUpperCase();
+          if (code && !found[code]) found[code] = { ticker: code, empresa: row.empresa || "" };
+        }
+        pages = data.pages || 1;
+        page += 1;
+      } while (page <= pages && page <= 20);
+      return Object.values(found).sort((a, b) => a.ticker.localeCompare(b.ticker, "pt-BR"));
+    }
+
+    async function loadTickerCatalog() {
+      if (tickerCatalog) return tickerCatalog;
+      if (!tickerCatalogP) {
+        tickerCatalogP = (async () => {
+          try {
+            const data = await api("/api/tickers");
+            tickerCatalog = data.tickers || [];
+          } catch (_) {
+            tickerCatalog = await loadTickersFromFeed();
+          }
+          return tickerCatalog;
+        })().catch((err) => {
+          tickerCatalogP = null;
+          throw err;
+        });
+      }
+      return tickerCatalogP;
+    }
+
+    function renderFavMenu(rows) {
+      const menu = $("fav-menu");
+      if (!menu) return;
+      const taken = new Set(loadFavs());
+      const query = favQuery();
+      const matches = (rows || []).filter((row) => {
+        const code = String(row.ticker || "").toUpperCase();
+        if (!code || taken.has(code)) return false;
+        if (!query) return true;
+        const nome = String(row.empresa || "").toUpperCase();
+        const prefix = code.replace(/\d+$/, "") || code;
+        return code.includes(query) || nome.includes(query)
+          || (prefix.length >= 4 && query.startsWith(prefix))
+          || (query.length >= 3 && prefix.startsWith(query.replace(/\d+$/, "")));
+      });
+      const shown = matches;
+      if (!shown.length) {
+        menu.innerHTML = query
+          ? `<p class="fav-empty">Nenhum ticker livre com “${escapeHtml(query)}”. Enter tenta incluir.</p>`
+          : `<p class="fav-empty">Todos os tickers desta mesa já estão nos favoritos.</p>`;
+        return;
+      }
+      menu.innerHTML = shown.map((row) => {
+        const code = escapeHtml(row.ticker);
+        const nome = row.empresa ? ` <span>${escapeHtml(row.empresa)}</span>` : "";
+        const docs = row.has_docs === false ? ` <span>sem IPE ainda</span>` : "";
+        return `<button type="button" class="fav-opt" role="option" data-pick-fav="${code}"><b>${code}</b>${nome}${docs}</button>`;
+      }).join("");
+    }
+
+    async function openFavMenu() {
+      const menu = $("fav-menu");
+      if (menu) menu.hidden = false;
+      $("busca-fav")?.setAttribute("aria-expanded", "true");
+      if (tickerCatalog) {
+        renderFavMenu(tickerCatalog);
+        return;
+      }
+      if (menu) menu.innerHTML = `<p class="fav-empty">Carregando tickers…</p>`;
+      try {
+        renderFavMenu(await loadTickerCatalog());
+      } catch (_) {
+        if (menu) menu.innerHTML = `<p class="fav-empty">Não deu para carregar os tickers.</p>`;
+      }
+    }
+
+    function closeFavMenu() {
+      const menu = $("fav-menu");
+      if (menu) menu.hidden = true;
+      $("busca-fav")?.setAttribute("aria-expanded", "false");
+    }
+
+    function pickFavTicker(ticker) {
+      closeFavMenu();
+      addFavChecked(ticker);
+    }
+
+    function rowId(row) {
+      return String(row?.protocolo || row?.url || "");
+    }
+
+    function currentLido() {
+      return document.querySelector(".lido-filter [aria-pressed='true']")?.dataset.lido || "todos";
+    }
+
+    function setLido(value) {
+      const wanted = ["todos", "nao", "sim"].includes(value) ? value : "todos";
+      document.querySelectorAll("[data-lido]").forEach((btn) => {
+        btn.setAttribute("aria-pressed", btn.dataset.lido === wanted ? "true" : "false");
+      });
+    }
+
+    function filterByLido(links, lido) {
+      const seen = seenIds();
+      if (lido === "nao") return links.filter((row) => rowId(row) && !seen.has(rowId(row)));
+      if (lido === "sim") return links.filter((row) => rowId(row) && seen.has(rowId(row)));
+      return links;
+    }
+
+    let lastProtocolos = [];
+
+    function updateLidoBadge(ids) {
+      const badge = $("lido-n");
+      if (!badge) return;
+      if (Array.isArray(ids)) lastProtocolos = ids.map(String).filter(Boolean);
+      const seen = seenIds();
+      const unread = lastProtocolos.filter((id) => !seen.has(id)).length;
+      badge.hidden = unread === 0;
+      badge.textContent = String(unread);
+    }
+
+    function filtersFromForm() {
+      return {
+        ticker: ($("ticker")?.value || "").trim().toUpperCase(),
+        empresa: ($("empresa")?.value || "").trim(),
+        ccvm: ($("ccvm")?.value || "").trim(),
+        categoria: $("categoria")?.value || "",
+        data_de: toIsoDate($("data_de")?.value || ""),
+        data_ate: toIsoDate($("data_ate")?.value || ""),
+        favoritos: $("somente-favoritos")?.getAttribute("aria-pressed") === "true",
+        lido: currentLido(),
+        page: Number($("filtros")?.dataset.page || "1") || 1,
+      };
+    }
+
+    function toIsoDate(value) {
+      const text = String(value || "").trim();
+      const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+      if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      const br = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(text);
+      if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+      return "";
+    }
+
+    function toBrDate(value) {
+      const iso = toIsoDate(value);
+      if (!iso) return "";
+      return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+    }
+
+    function formatDateInput(event) {
+      const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
+      const parts = [];
+      if (digits.length > 0) parts.push(digits.slice(0, 2));
+      if (digits.length > 2) parts.push(digits.slice(2, 4));
+      if (digits.length > 4) parts.push(digits.slice(4));
+      event.target.value = parts.join("/");
+    }
+
+    const CAL_MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+    let calFor = "";
+    let calCursor = new Date();
+
+    function closeCal() {
+      const pop = $("cal-pop");
+      if (pop) pop.hidden = true;
+      calFor = "";
+    }
+
+    function openCal(id, anchor) {
+      if (calFor === id && $("cal-pop") && !$("cal-pop").hidden) {
+        closeCal();
+        return;
+      }
+      calFor = id;
+      const iso = toIsoDate($(id).value);
+      calCursor = iso
+        ? new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, 1)
+        : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      renderCal(anchor);
+    }
+
+    function renderCal(anchor) {
+      const pop = $("cal-pop");
+      if (!pop || !calFor) return;
+      const year = calCursor.getFullYear();
+      const month = calCursor.getMonth();
+      const selected = toIsoDate($(calFor).value || "");
+      const now = new Date();
+      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const firstDow = new Date(year, month, 1).getDay();
+      const daysIn = new Date(year, month + 1, 0).getDate();
+      const prevDays = new Date(year, month, 0).getDate();
+      const tiles = ["D","S","T","Q","Q","S","S"].map((d) => `<span>${d}</span>`);
+      for (let i = 0; i < 42; i++) {
+        const dayNum = i - firstDow + 1;
+        let y = year, m = month, d = dayNum, muted = "";
+        if (dayNum < 1) {
+          y = month === 0 ? year - 1 : year;
+          m = month === 0 ? 11 : month - 1;
+          d = prevDays + dayNum;
+          muted = " muted";
+        } else if (dayNum > daysIn) {
+          y = month === 11 ? year + 1 : year;
+          m = month === 11 ? 0 : month + 1;
+          d = dayNum - daysIn;
+          muted = " muted";
+        }
+        const iso = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const klass = `${muted}${iso === todayIso ? " is-today" : ""}${iso === selected ? " is-selected" : ""}`;
+        tiles.push(`<button type="button" data-iso="${iso}" class="${klass.trim()}" aria-label="${toBrDate(iso)}">${d}</button>`);
+      }
+      pop.innerHTML = `<div class="cal-head">
+          <button type="button" data-cal-nav="-1" aria-label="Mês anterior">‹</button>
+          <strong>${CAL_MESES[month]} ${year}</strong>
+          <button type="button" data-cal-nav="1" aria-label="Próximo mês">›</button>
+        </div>
+        <div class="cal-grid">${tiles.join("")}</div>`;
+      pop.hidden = false;
+      const rect = (anchor || $(calFor)).getBoundingClientRect();
+      pop.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 280)) + "px";
+      pop.style.top = (rect.bottom + 6) + "px";
+    }
+
+    function bindCal() {
+      const pop = $("cal-pop");
+      if (!pop) return;
+      pop.onclick = (e) => {
+        const nav = e.target.closest("[data-cal-nav]");
+        if (nav) {
+          e.preventDefault();
+          calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + Number(nav.dataset.calNav), 1);
+          renderCal(document.querySelector(`[data-cal="${calFor}"]`));
+          return;
+        }
+        const day = e.target.closest("[data-iso]");
+        if (day && calFor) {
+          e.preventDefault();
+          $(calFor).value = toBrDate(day.dataset.iso);
+          closeCal();
+          if ($("filtros")) $("filtros").dataset.page = "1";
+          applyFilters();
+        }
+      };
+    }
+
+    let filterTimer;
+    function scheduleApplyFilters() {
+      clearTimeout(filterTimer);
+      filterTimer = setTimeout(() => {
+        $("filtros").dataset.page = "1";
+        applyFilters();
+      }, 250);
+    }
+
+    function syncUrl(f) {
+      const q = new URLSearchParams();
+      if (f.ticker) q.set("ticker", f.ticker);
+      if (f.empresa) q.set("empresa", f.empresa);
+      if (f.ccvm) q.set("ccvm", f.ccvm);
+      if (f.categoria) q.set("categoria", f.categoria);
+      if (f.data_de) q.set("data_de", f.data_de);
+      if (f.data_ate) q.set("data_ate", f.data_ate);
+      if (f.favoritos) q.set("favoritos", "1");
+      if (f.lido && f.lido !== "todos") q.set("lido", f.lido);
+      if (f.page && f.page > 1) q.set("page", String(f.page));
+      history.replaceState(null, "", "/?" + q.toString());
+    }
+
+    function setCategoriaOptions(cats, chosen) {
+      const sel = $("categoria");
+      if (!sel) return;
+      const unique = [...new Set((cats || []).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
+      sel.replaceChildren();
+      const all = document.createElement("option");
+      all.value = "";
+      all.textContent = "Todas as categorias";
+      sel.appendChild(all);
+      for (const name of unique) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      }
+      if (chosen && [...sel.options].some(o => o.value === chosen)) sel.value = chosen;
+    }
+
+    async function fillCategorias() {
+      const sel = $("categoria");
+      if (!sel) return;
+      const chosen = sel.value || new URLSearchParams(location.search).get("categoria") || "";
+      let cats = [];
+      try {
+        const data = await api("/api/categorias?listagem=todas");
+        cats = data.categorias || [];
+      } catch (_) {}
+      if (!cats.length) {
+        try {
+          const data = await api("/api/ipe?listagem=todas&page_size=100");
+          cats = (data.links || []).map(row => row.categoria);
+        } catch (_) {}
+      }
+      setCategoriaOptions(cats, chosen);
+    }
+
+    function pagerHtml(page, pages) {
+      if (!pages || pages <= 1) return "";
+      return `<div class="pager">
+        <button type="button" class="ghost" data-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>Anterior</button>
+        <span>Página ${page} de ${pages}</span>
+        <button type="button" class="ghost" data-page="${page + 1}" ${page >= pages ? "disabled" : ""}>Próxima</button>
+      </div>`;
+    }
+
+    function tickerPrefix(value) {
+      return String(value || "").trim().toUpperCase().replace(/\d+$/, "");
+    }
+
+    function feedParams(f) {
+      const qs = new URLSearchParams();
+      if (f.empresa) qs.set("empresa", f.empresa);
+      if (f.ccvm) qs.set("ccvm", f.ccvm);
+      if (f.categoria) qs.set("categoria", f.categoria);
+      if (f.data_de) qs.set("data_de", f.data_de);
+      if (f.data_ate) qs.set("data_ate", f.data_ate);
+      qs.set("listagem", "todas");
+      if (f.favoritos) {
+        const favs = loadFavs();
+        if (!favs.length) return { empty: true, qs };
+        if (f.ticker) {
+          const wanted = tickerPrefix(f.ticker);
+          if (!favs.some((item) => tickerPrefix(item) === wanted)) return { empty: true, qs };
+          qs.set("ticker", f.ticker);
+        } else {
+          qs.set("tickers", favs.join(","));
+        }
+      } else if (f.ticker) {
+        qs.set("ticker", f.ticker);
+      }
+      return { empty: false, qs };
+    }
+
+    async function loadFeed() {
+      const f = filtersFromForm();
+      const { empty, qs } = feedParams(f);
+      if (empty) return { links: [], total: 0, page: 1, pages: 1, ticker: f.ticker || "", empty_favoritos: f.favoritos && !loadFavs().length };
+      qs.set("page", String(f.page || 1));
+      qs.set("page_size", "50");
+      return api("/api/ipe?" + qs.toString());
+    }
+
+    async function loadProtocolos() {
+      const f = filtersFromForm();
+      const { empty, qs } = feedParams(f);
+      if (empty) return { ids: [] };
+      return api("/api/protocolos?" + qs.toString());
+    }
+
+    async function loadAllIds(f) {
+      try {
+        const payload = await loadProtocolos();
+        if (Array.isArray(payload?.ids)) return payload.ids;
+      } catch (_) {}
+      try {
+        return (await loadAllLinks(f)).map(rowId).filter(Boolean);
+      } catch (_) {
+        return lastProtocolos;
+      }
+    }
+
+    async function loadAllLinks(f) {
+      const { empty, qs } = feedParams(f);
+      if (empty) return [];
+      const links = [];
+        let page = 1;
+      let pages = 1;
+      do {
+        const q = new URLSearchParams(qs);
+        q.set("page", String(page));
+        q.set("page_size", "100");
+        const data = await api("/api/ipe?" + q.toString());
+        links.push(...(data.links || []));
+        pages = data.pages || 1;
+        page += 1;
+      } while (page <= pages && page <= 50);
+      return links;
+    }
+
+    async function refreshTape() {
+      const favs = loadFavs();
+      if (!favs.length) {
+        $("tape").textContent = "Selecione favoritos para acompanhar no banner.";
+        return;
+      }
+      const links = [];
+      for (const ticker of favs) {
+        try {
+          const data = await api("/api/ipe?ticker=" + encodeURIComponent(ticker) + "&listagem=todas&page_size=8");
+          links.push(...(data.links || []).map(row => ({ ...row, ticker: row.ticker || ticker })));
+        } catch (_) {}
+      }
+      const uniqueLinks = [...new Map(links.map(row => [String(row.protocolo || row.url), row])).values()];
+      uniqueLinks.sort((a, b) => String(b.data_entrega || "").localeCompare(String(a.data_entrega || "")));
+      const tape = uniqueLinks.slice(0, 8).map(r =>
+        `<b>${escapeHtml(r.empresa || r.ticker)} · ${escapeHtml(r.ticker || r.empresa)}</b> · ${escapeHtml(r.categoria)} · ${escapeHtml(officialWhen(r.data_entrega))}`
+      ).join(" &nbsp;·&nbsp; ");
+      $("tape").innerHTML = tape || "Sem documentos nos favoritos.";
+    }
+
+    async function applyFilters() {
+      const f = filtersFromForm();
+      const requestId = ++applyFilters.requestId;
+      syncUrl(f);
+      const status = $("status");
+      const lista = $("lista");
+      if (status) {
+        status.className = "status";
+        status.textContent = "Filtrando…";
+      }
+      try {
+        let links = [];
+        let total = 0;
+        let page = Math.max(1, f.page || 1);
+        let pages = 1;
+        let emptyFavs = false;
+        let tickerLabel = "";
+        if (f.lido === "nao" || f.lido === "sim") {
+          const all = await loadAllLinks(f);
+          if (requestId !== applyFilters.requestId) return;
+          updateLidoBadge(all.map(rowId).filter(Boolean));
+          const filtered = filterByLido(all, f.lido);
+          const pageSize = 50;
+          total = filtered.length;
+          pages = Math.max(1, Math.ceil(total / pageSize) || 1);
+          if (page > pages) page = pages;
+          links = filtered.slice((page - 1) * pageSize, page * pageSize);
+          emptyFavs = f.favoritos && !loadFavs().length;
+        } else {
+          const idsP = loadAllIds(f);
+          const data = await loadFeed();
+          if (requestId !== applyFilters.requestId) return;
+          links = data.links || [];
+          total = data.total ?? links.length;
+          page = data.page || 1;
+          pages = data.pages || 1;
+          emptyFavs = Boolean(data.empty_favoritos);
+          tickerLabel = data.ticker || "";
+          const ids = await idsP;
+          if (requestId !== applyFilters.requestId) return;
+          if (Array.isArray(ids)) updateLidoBadge(ids);
+        }
+        if ($("filtros")) $("filtros").dataset.page = String(page);
+        if (status) {
+          if (emptyFavs) status.textContent = "Inclua um favorito para filtrar a lista.";
+          else if (f.lido === "nao") {
+            status.textContent =
+              `${total} não lido(s)` + (pages > 1 ? ` · página ${page} de ${pages}` : "");
+          } else if (f.lido === "sim") {
+            status.textContent =
+              `${total} lido(s)` + (pages > 1 ? ` · página ${page} de ${pages}` : "");
+          } else {
+            status.textContent =
+              `${total} documento(s)` +
+              (pages > 1 ? ` · página ${page} de ${pages}` : "") +
+              (tickerLabel ? ` · ${tickerLabel}` : "");
+          }
+        }
+        if (lista) lista.innerHTML = rowsHtml(links) + pagerHtml(page, pages);
+        fillCategorias().catch(() => {});
+      } catch (err) {
+        if (status) {
+          status.className = "status error";
+          status.textContent = err.message || "Não deu para carregar os documentos.";
+        }
+      }
+    }
+    applyFilters.requestId = 0;
+
+    function home() {
+      const q = new URLSearchParams(location.search);
+      $("main").innerHTML = `
+        <form class="filters" id="filtros">
+          <label>Ticker <input id="ticker" placeholder="PETR4" value="${escapeHtml(q.get("ticker") || "")}"></label>
+          <label>Empresa <input id="empresa" placeholder="Mills, Petrobras…" value="${escapeHtml(q.get("empresa") || "")}"></label>
+          <label>CVM <input id="ccvm" inputmode="numeric" placeholder="9512" value="${escapeHtml(q.get("ccvm") || "")}"></label>
+          <label>Entrega: De
+            <span class="date-wrap">
+              <input id="data_de" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" autocomplete="off" value="${escapeHtml(toBrDate(q.get("data_de") || ""))}">
+              <button type="button" class="cal-open" data-cal="data_de" aria-label="Abrir calendário" title="Calendário"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1" fill="none" stroke="currentColor"/><path d="M2 6h12M5 2v2M11 2v2" fill="none" stroke="currentColor"/></svg></button>
+            </span>
+          </label>
+          <label>Entrega: Até
+            <span class="date-wrap">
+              <input id="data_ate" type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" autocomplete="off" value="${escapeHtml(toBrDate(q.get("data_ate") || ""))}">
+              <button type="button" class="cal-open" data-cal="data_ate" aria-label="Abrir calendário" title="Calendário"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1" fill="none" stroke="currentColor"/><path d="M2 6h12M5 2v2M11 2v2" fill="none" stroke="currentColor"/></svg></button>
+            </span>
+          </label>
+          <label>Categoria
+            <select id="categoria">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <button type="button" class="check-filter" id="somente-favoritos" aria-pressed="${q.get("favoritos") === "1" ? "true" : "false"}"><span class="check-box" aria-hidden="true"></span> Somente favoritos</button>
+          <button type="button" class="ghost" id="limpar">Limpar</button>
+        </form>
+        <p class="status" id="status"></p>
+        <div id="lista"></div>
+        <div id="cal-pop" class="cal-pop" hidden></div>`;
+      $("filtros").dataset.page = q.get("page") || "1";
+      setLido(q.get("lido") || "todos");
+      bindCal();
+      ["ticker", "empresa", "ccvm"].forEach((id) => {
+        $(id).addEventListener("input", scheduleApplyFilters);
+      });
+      ["data_de", "data_ate"].forEach((id) => {
+        $(id).addEventListener("input", (event) => {
+          formatDateInput(event);
+          scheduleApplyFilters();
+        });
+      });
+      $("categoria").addEventListener("change", scheduleApplyFilters);
+      $("somente-favoritos").addEventListener("click", () => {
+        const btn = $("somente-favoritos");
+        btn.setAttribute("aria-pressed", btn.getAttribute("aria-pressed") === "true" ? "false" : "true");
+        $("filtros").dataset.page = "1";
+        applyFilters();
+      });
+      $("filtros").onsubmit = (e) => {
+        e.preventDefault();
+        $("filtros").dataset.page = "1";
+        applyFilters();
+      };
+      $("limpar").onclick = () => {
+        $("ticker").value = "";
+        $("empresa").value = "";
+        $("ccvm").value = "";
+        $("data_de").value = "";
+        $("data_ate").value = "";
+        $("somente-favoritos").setAttribute("aria-pressed", "false");
+        $("categoria").value = "";
+        setLido("todos");
+        $("filtros").dataset.page = "1";
+        applyFilters();
+      };
+      applyFilters();
+    }
+
+    function syncFavs() {
+      renderFavs();
+      refreshTape();
+      if ($("filtros")) applyFilters();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeCal();
+        closeFavMenu();
+      }
+    });
+    document.body.addEventListener("click", (e) => {
+      const pick = e.target.closest("[data-pick-fav]");
+      if (pick) {
+        e.preventDefault();
+        pickFavTicker(pick.dataset.pickFav);
+        return;
+      }
+      if (!e.target.closest("#fav-picker")) closeFavMenu();
+      const calBtn = e.target.closest("[data-cal]");
+      if (calBtn) {
+        e.preventDefault();
+        openCal(calBtn.dataset.cal, calBtn);
+        return;
+      }
+      if ($("cal-pop") && !$("cal-pop").hidden && !e.target.closest("#cal-pop")) closeCal();
+      const readToggle = e.target.closest("[data-read-toggle]");
+      if (readToggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = readToggle.dataset.readToggle || "";
+        if (seenIds().has(id)) markUnread([id]);
+        else markSeen([id]);
+        updateLidoBadge();
+        if ($("filtros")) applyFilters();
+        return;
+      }
+      const pageBtn = e.target.closest("[data-page]");
+      if (pageBtn && $("filtros") && !pageBtn.disabled) {
+        e.preventDefault();
+        $("filtros").dataset.page = pageBtn.dataset.page;
+        applyFilters();
+        return;
+      }
+      const filterTicker = e.target.closest("[data-filter-ticker]");
+      if (filterTicker && $("filtros")) {
+        e.preventDefault();
+        $("ticker").value = filterTicker.dataset.filterTicker || "";
+        $("filtros").dataset.page = "1";
+        applyFilters();
+        return;
+      }
+      const un = e.target.closest("[data-unstar]");
+      if (un) {
+        e.preventDefault();
+        removeFav(un.dataset.unstar);
+        setFavStatus("");
+        syncFavs();
+      }
+    });
+
+    $("add-fav").onsubmit = (e) => {
+      e.preventDefault();
+      addFavChecked($("busca-fav").value);
+    };
+    $("busca-fav").addEventListener("focus", openFavMenu);
+    $("busca-fav").addEventListener("click", openFavMenu);
+    $("busca-fav").addEventListener("input", (e) => {
+      const pos = e.target.selectionStart;
+      e.target.value = e.target.value.toUpperCase();
+      e.target.setSelectionRange(pos, pos);
+      openFavMenu();
+    });
+    document.querySelectorAll("[data-lido]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setLido(btn.dataset.lido);
+        if ($("filtros")) $("filtros").dataset.page = "1";
+        if ($("filtros")) applyFilters();
+      });
+    });
+
+    (async () => {
+      await loadStatus();
+      renderFavs();
+      refreshTape();
+      const m = path.match(/^\/([A-Z0-9]{4,7})$/i);
+      if (m) {
+        const q = new URLSearchParams(location.search);
+        q.set("ticker", m[1].toUpperCase());
+        history.replaceState(null, "", "/?" + q.toString());
+      }
+      home();
+    })();
+  </script>
+</body>
+</html>
