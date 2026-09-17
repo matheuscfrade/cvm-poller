@@ -619,6 +619,7 @@
         const nav = e.target.closest("[data-cal-nav]");
         if (nav) {
           e.preventDefault();
+          e.stopPropagation();
           calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + Number(nav.dataset.calNav), 1);
           renderCal(document.querySelector(`[data-cal="${calFor}"]`));
           return;
