@@ -8,8 +8,34 @@ from pathlib import Path
 from app.notify import flush_outbox, smtp_send
 from app.poller import poll_once
 from app.store import Store
+from app.timeutil import BRT, now_br
 
 log = logging.getLogger("ipe.worker")
+
+# Polling is suspended between QUIET_START (inclusive) and QUIET_END (exclusive).
+# All times are in BRT (America/Sao_Paulo).
+_QUIET_START_HOUR = 0   # midnight
+_QUIET_END_HOUR   = 5   # 05:00
+
+
+def _sleep_until_market_open() -> None:
+    """If the current BRT time falls inside the quiet window [00:00, 05:00),
+    sleep until 05:00 BRT of the same calendar day.
+
+    The first poll after waking up will automatically fetch all data since
+    00:00 because ``_window()`` in poller.py resets the cursor to "00:00"
+    whenever the stored cursor date differs from today.
+    """
+    now = now_br()
+    if _QUIET_START_HOUR <= now.hour < _QUIET_END_HOUR:
+        wake = now.replace(hour=_QUIET_END_HOUR, minute=0, second=0, microsecond=0)
+        delta = (wake - now).total_seconds()
+        log.info(
+            "fora do horário de coleta (%02d:%02d BRT). "
+            "próxima coleta às %02d:00. dormindo %.0f s.",
+            now.hour, now.minute, _QUIET_END_HOUR, delta,
+        )
+        time.sleep(delta)
 
 
 def _store() -> Store:
@@ -46,6 +72,7 @@ def main() -> None:
     interval = max(60, int(os.environ.get("POLL_INTERVAL_SECONDS", "120")))
     mail = _mailer()
     while True:
+        _sleep_until_market_open()
         try:
             result = poll_once(store, login=login, senha=senha)
             log.info("poll %s novos=%s %s", result.source, result.novos, result.erro)
