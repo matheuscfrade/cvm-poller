@@ -14,6 +14,13 @@ from cvm_poller.parse import IpeLink
 _PROTO = re.compile(r"numProtocolo=(\d+)", re.I)
 _ISO_DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})")
 _BR_DATE = re.compile(r"^(\d{2})/(\d{2})/(\d{4})")
+# data_entrega is dd/mm/yyyy[ HH:MM]; lexicographic DESC puts "30/09" before "01/10".
+_ENTREGA_ISO = (
+    "(substr(data_entrega, 7, 4) || '-' || "
+    "substr(data_entrega, 4, 2) || '-' || "
+    "substr(data_entrega, 1, 2))"
+)
+_ENTREGA_SORT = f"({_ENTREGA_ISO} || substr(data_entrega, 11))"
 
 
 def protocolo_of(link: IpeLink) -> str:
@@ -373,7 +380,7 @@ class Store:
         )
         sql = (
             f"SELECT * FROM filings WHERE {where} "
-            "ORDER BY data_entrega DESC, first_seen DESC LIMIT ? OFFSET ?"
+            f"ORDER BY {_ENTREGA_SORT} DESC, first_seen DESC LIMIT ? OFFSET ?"
         )
         rows = self._conn.execute(
             sql, [*params, limit, max(0, offset)]).fetchall()
@@ -471,7 +478,7 @@ class Store:
             sql += " AND empresa LIKE ? COLLATE NOCASE"
             params.append(f"%{empresa.strip()}%")
 
-        entrega_expr = "(substr(data_entrega, 7, 4) || '-' || substr(data_entrega, 4, 2) || '-' || substr(data_entrega, 1, 2))"
+        entrega_expr = _ENTREGA_ISO
         ref_expr = "(substr(data_ref, 7, 4) || '-' || substr(data_ref, 4, 2) || '-' || substr(data_ref, 1, 2))"
 
         start = _date_key(data_de)

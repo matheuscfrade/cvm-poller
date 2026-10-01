@@ -247,6 +247,11 @@
       if (!m) return "—";
       return m[2] ? `${m[1]} ${m[2]}` : m[1];
     }
+    function entregaSortKey(value) {
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}:\d{2}))?/.exec(String(value || ""));
+      if (!m) return "";
+      return `${m[3]}-${m[2]}-${m[1]} ${m[4] || ""}`;
+    }
     function formatSeen(iso) {
       if (!iso) return "—";
       const raw = /Z$|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z";
@@ -792,7 +797,7 @@
         } catch (_) {}
       }
       const uniqueLinks = [...new Map(links.map(row => [String(row.protocolo || row.url), row])).values()];
-      uniqueLinks.sort((a, b) => String(b.data_entrega || "").localeCompare(String(a.data_entrega || "")));
+      uniqueLinks.sort((a, b) => entregaSortKey(b.data_entrega).localeCompare(entregaSortKey(a.data_entrega)));
       const tape = uniqueLinks.slice(0, 8).map(r =>
         `<b>${escapeHtml(r.empresa || r.ticker)} · ${escapeHtml(r.ticker || r.empresa)}</b> · ${escapeHtml(r.categoria)} · ${escapeHtml(officialWhen(r.data_entrega))}`
       ).join(" &nbsp;·&nbsp; ");

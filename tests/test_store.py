@@ -164,6 +164,26 @@ def test_list_filings_filters_by_entrega_date(tmp_path: Path):
     assert store.count_filings(data_de="16/09/2026") == 1
 
 
+def test_list_filings_orders_by_entrega_chronologically(tmp_path: Path):
+    store = Store(tmp_path / "ipe.db")
+    store.upsert_filings(
+        [
+            _link(protocolo="sep30", url="https://a?numProtocolo=sep30",
+                  data_entrega="30/09/2026 23:57"),
+            _link(protocolo="oct1-am", url="https://a?numProtocolo=oct1-am",
+                  data_entrega="01/10/2026 08:10"),
+            _link(protocolo="oct1-pm", url="https://a?numProtocolo=oct1-pm",
+                  data_entrega="01/10/2026 18:40"),
+        ],
+        source="login",
+    )
+    assert [row["protocolo"] for row in store.list_filings()] == [
+        "oct1-pm",
+        "oct1-am",
+        "sep30",
+    ]
+
+
 def test_login_link_does_not_copy_ref_into_entrega(tmp_path: Path):
     store = Store(tmp_path / "ipe.db")
     store.upsert_filings(
