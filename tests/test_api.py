@@ -380,6 +380,11 @@ def test_home_is_html(tmp_path: Path):
     assert "data-read-toggle" in html
     assert "Criar conta" not in html
     assert 'id="login"' not in html
+    assert "startLiveRefresh" in html
+    assert "refreshCurrentView" in html
+    assert "applyFilters({ silent: true })" in html
+    assert "favoritos: $(\"somente-favoritos\")" in html
+    assert "function tickLive" in html
 
 
 def test_old_login_pages_redirect_home(tmp_path: Path):

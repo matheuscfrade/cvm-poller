@@ -297,7 +297,11 @@
         const s = await api("/api/status");
         const t = s.last_poll_at_br || formatSeen(s.last_poll_at);
         $("live").textContent = s.last_poll_error ? "coleta com falha" : (t ? `atualizado em ${t}` : "ainda não");
-      } catch { $("live").textContent = "offline"; }
+        return s;
+      } catch {
+        $("live").textContent = "offline";
+        return null;
+      }
     }
 
     function loadFavs() {
@@ -644,6 +648,7 @@
     function scheduleApplyFilters() {
       clearTimeout(filterTimer);
       filterTimer = setTimeout(() => {
+        filterTimer = null;
         $("filtros").dataset.page = "1";
         applyFilters();
       }, 250);
@@ -804,13 +809,14 @@
       $("tape").innerHTML = tape || "Sem documentos nos favoritos.";
     }
 
-    async function applyFilters() {
+    async function applyFilters(opts) {
+      const silent = Boolean(opts && opts.silent);
       const f = filtersFromForm();
       const requestId = ++applyFilters.requestId;
       syncUrl(f);
       const status = $("status");
       const lista = $("lista");
-      if (status) {
+      if (status && !silent) {
         status.className = "status";
         status.textContent = "Filtrando…";
       }
@@ -863,8 +869,9 @@
           }
         }
         if (lista) lista.innerHTML = rowsHtml(links) + pagerHtml(page, pages);
-        fillCategorias().catch(() => {});
+        if (!silent) fillCategorias().catch(() => {});
       } catch (err) {
+        if (silent) return;
         if (status) {
           status.className = "status error";
           status.textContent = err.message || "Não deu para carregar os documentos.";
@@ -872,6 +879,41 @@
       }
     }
     applyFilters.requestId = 0;
+
+    const LIVE_MS = 15000;
+    let lastPollAt = "";
+    let liveTimer = 0;
+    let liveInFlight = false;
+
+    async function refreshCurrentView() {
+      const y = window.scrollY;
+      await refreshTape();
+      if ($("filtros")) await applyFilters({ silent: true });
+      window.scrollTo(0, y);
+    }
+
+    async function tickLive() {
+      if (liveInFlight || document.hidden || filterTimer) return;
+      liveInFlight = true;
+      try {
+        const s = await loadStatus();
+        if (!s) return;
+        const stamp = s.last_poll_at || "";
+        if (stamp === lastPollAt) return;
+        await refreshCurrentView();
+        lastPollAt = stamp;
+      } finally {
+        liveInFlight = false;
+      }
+    }
+
+    function startLiveRefresh() {
+      if (liveTimer) clearInterval(liveTimer);
+      liveTimer = setInterval(tickLive, LIVE_MS);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) tickLive();
+      });
+    }
 
     function home() {
       const q = new URLSearchParams(location.search);
@@ -1025,7 +1067,8 @@
     });
 
     (async () => {
-      await loadStatus();
+      const s = await loadStatus();
+      lastPollAt = (s && s.last_poll_at) || "";
       renderFavs();
       refreshTape();
       const m = path.match(/^\/([A-Z0-9]{4,7})$/i);
@@ -1035,6 +1078,7 @@
         history.replaceState(null, "", "/?" + q.toString());
       }
       home();
+      startLiveRefresh();
     })();
   </script>
 </body>
